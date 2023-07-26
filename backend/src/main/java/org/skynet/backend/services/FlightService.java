@@ -22,7 +22,7 @@ public class FlightService {
 
     private static String key ;
 
-    private static String secret ;
+    private static String secret;
     static Amadeus amadeus = Amadeus
 
             .builder(key,secret)
@@ -30,17 +30,18 @@ public class FlightService {
             .build();
 
     static ObjectMapper objectMapper = new ObjectMapper();
-    JsonNode jsonNode;
 
-
-    public static FlightDTO getFlightDTO(String originLocationCode, String destinationLocationCode, String departureDate, String returnDate)
+    public List<FlightDTO> getMultipleFlightDTOs
+            (String originLocationCode, String destinationLocationCode, String departureDate, String returnDate, int numberOfResults)
             throws JsonProcessingException, ResponseException {
+
         FlightOfferSearch[] flightOffersSearches = amadeus.shopping.flightOffersSearch.get(
                 Params.with("originLocationCode", originLocationCode)
                         .and("destinationLocationCode", destinationLocationCode)
                         .and("departureDate", departureDate)
                         .and("returnDate", returnDate)
-                        .and("adults", 1));
+                        .and("adults", 1)
+                        .and("max", numberOfResults));
 
         if (flightOffersSearches[0].getResponse().getStatusCode() != 200) {
 
@@ -49,32 +50,57 @@ public class FlightService {
             System.exit(-1);
         }
 
-        String result = flightOffersSearches[0].getResponse().getBody();
+        List<FlightDTO> flightDTOS = new ArrayList<>();
+        for(int i = 0; i < numberOfResults; i++) {
+            flightDTOS.add(getFlightDTO(flightOffersSearches, i));
+        }
+
+        return flightDTOS;
+    }
+
+
+    public FlightDTO getFlightDTO(FlightOfferSearch[] flightOffersSearches, int listIndex) throws JsonProcessingException {
+
+        String result = flightOffersSearches[listIndex].getResponse().getBody();
         FlightDTO flightDTO = null;
         JsonNode resultJson = objectMapper.readTree(result);
         JsonNode journey1 = resultJson.get("data").get(0);
         JsonNode outboundJourney = journey1.get("itineraries").get(0);
         JsonNode inboundJourney = journey1.get("itineraries").get(1);
         
-        String dtoPrice = journey1.get("price").get("total").asText();
+        Double dtoPrice = journey1.get("price").get("total").asDouble();
         String dtoOutboundDuration = outboundJourney.get("duration").asText();
         String dtoInboundDuration = inboundJourney.get("duration").asText();
 
-        // only outbound journey leg, still need inbound
         List<FlightDTO.Leg> dtoOutboundJourney = new ArrayList<>();
         for (int i = 0; i < outboundJourney.get("segments").size(); i++) {
-            String departureTime = outboundJourney.get("segments").get(i).get("departure").get("at").asText();
-            String arrivalTime = outboundJourney.get("segments").get(i).get("arrival").get("at").asText();
-            String departureAirport = outboundJourney.get("segments").get(i).get("departure").get("iataCode").asText();
-            String arrivalAirport = outboundJourney.get("segments").get(i).get("arrival").get("iataCode").asText();
-            String duration = outboundJourney.get("segments").get(i).get("duration").asText();
+            JsonNode outboundSegment = outboundJourney.get("segments").get(i);
+            String departureTime = outboundSegment.get("departure").get("at").asText();
+            String arrivalTime = outboundSegment.get("arrival").get("at").asText();
+            String departureAirport = outboundSegment.get("departure").get("iataCode").asText();
+            String arrivalAirport = outboundSegment.get("arrival").get("iataCode").asText();
+            String duration = outboundSegment.get("duration").asText();
             
             FlightDTO.Leg outboundLeg = new FlightDTO.Leg(departureTime, arrivalTime, departureAirport, arrivalAirport, duration);
             dtoOutboundJourney.add(outboundLeg);
         }
 
-        System.out.println(dtoOutboundJourney.get(0).getDepartureTime() + dtoOutboundJourney.get(0).getArrivalTime());
-        System.out.println(dtoOutboundJourney.get(1).getDepartureTime() + dtoOutboundJourney.get(1).getArrivalTime());
+        List<FlightDTO.Leg> dtoInboundJourney = new ArrayList<>();
+        for (int i = 0; i < inboundJourney.get("segments").size(); i++) {
+            JsonNode inboundSegment = inboundJourney.get("segments").get(i);
+            String departureTime = inboundSegment.get("departure").get("at").asText();
+            String arrivalTime = inboundSegment.get("arrival").get("at").asText();
+            String departureAirport = inboundSegment.get("departure").get("iataCode").asText();
+            String arrivalAirport = inboundSegment.get("arrival").get("iataCode").asText();
+            String duration = inboundSegment.get("duration").asText();
+
+            FlightDTO.Leg inboundLeg = new FlightDTO.Leg(departureTime, arrivalTime, departureAirport, arrivalAirport, duration);
+            dtoInboundJourney.add(inboundLeg);
+        }
+
+        flightDTO = new FlightDTO(dtoPrice, dtoInboundJourney, dtoOutboundJourney, dtoInboundDuration, dtoOutboundDuration);
+
+        System.out.println(flightDTO.getPrice() + flightDTO.getInboundLegs().get(0).getDepartureTime() + flightDTO.getInboundLegs().get(0).getArrivalTime());
         return flightDTO;
 
     }
