@@ -1,18 +1,17 @@
 package org.skynet.backend.services;
 
-import com.amadeus.resources.FlightDate;
+import com.amadeus.Amadeus;
+import com.amadeus.Params;
+import com.amadeus.exceptions.ClientException;
+import com.amadeus.exceptions.ResponseException;
+import com.amadeus.resources.FlightOfferSearch;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.skynet.backend.rest.dtos.FlightDTO;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import com.amadeus.Amadeus;
-import com.amadeus.Params;
-import com.amadeus.exceptions.ResponseException;
-import com.amadeus.referencedata.Locations;
-import com.amadeus.resources.Destination;
-import com.amadeus.resources.FlightOfferSearch;
-import com.amadeus.resources.Location;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,9 +19,9 @@ import java.util.List;
 @Service
 public class FlightService {
 
-    private static String key = "";
+    private static String key = "BeHFw1dD9sSXycPHOAYMnuiVHHblGthN";
 
-    private static String secret = "" ;
+    private static String secret = "rM7AYrCBENROJtl2";
     static Amadeus amadeus = Amadeus
 
             .builder(key,secret)
@@ -34,20 +33,21 @@ public class FlightService {
     public List<FlightDTO> getMultipleFlightDTOs
             (String originLocationCode, String destinationLocationCode, String departureDate, String returnDate, int numberOfResults)
             throws JsonProcessingException, ResponseException {
-
-        FlightOfferSearch[] flightOffersSearches = amadeus.shopping.flightOffersSearch.get(
-                Params.with("originLocationCode", originLocationCode)
-                        .and("destinationLocationCode", destinationLocationCode)
-                        .and("departureDate", departureDate)
-                        .and("returnDate", returnDate)
-                        .and("adults", 1)
-                        .and("max", numberOfResults));
-
-        if (flightOffersSearches[0].getResponse().getStatusCode() != 200) {
-
-            System.out.println("Wrong status code: " + flightOffersSearches[0].getResponse().getStatusCode());
-
-            System.exit(-1);
+        FlightOfferSearch[] flightOffersSearches;
+        try {
+            flightOffersSearches = amadeus.shopping.flightOffersSearch.get(
+                    Params.with("originLocationCode", originLocationCode)
+                            .and("destinationLocationCode", destinationLocationCode)
+                            .and("departureDate", departureDate)
+                            .and("returnDate", returnDate)
+                            .and("adults", 1)
+                            .and("max", numberOfResults));
+        } catch (ClientException e) {
+            var response = e.getResponse();
+            HttpStatus statusCode = HttpStatus.valueOf(response.getStatusCode());
+            JsonNode body = objectMapper.readTree(response.getBody());
+            String errMsg = body.get("errors").get(0).get("detail").asText();
+            throw new ResponseStatusException(statusCode, errMsg);
         }
 
         List<FlightDTO> flightDTOS = new ArrayList<>();
