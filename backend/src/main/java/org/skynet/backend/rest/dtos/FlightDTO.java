@@ -31,6 +31,18 @@ public class FlightDTO {
         public String getArrivalTime() {
             return arrivalTime;
         }
+
+        public String getDepartureAirport() {
+            return departureAirport;
+        }
+
+        public String getArrivalAirport() {
+            return arrivalAirport;
+        }
+
+        public String getDuration() {
+            return duration;
+        }
     }
 
     private Double price;

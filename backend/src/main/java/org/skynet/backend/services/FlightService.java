@@ -20,9 +20,9 @@ import java.util.List;
 @Service
 public class FlightService {
 
-    private static String key ;
+    private static String key = "BeHFw1dD9sSXycPHOAYMnuiVHHblGthN";
 
-    private static String secret;
+    private static String secret = "rM7AYrCBENROJtl2";
     static Amadeus amadeus = Amadeus
 
             .builder(key,secret)
@@ -100,7 +100,6 @@ public class FlightService {
 
         flightDTO = new FlightDTO(dtoPrice, dtoInboundJourney, dtoOutboundJourney, dtoInboundDuration, dtoOutboundDuration);
 
-        System.out.println(flightDTO.getPrice() + flightDTO.getInboundLegs().get(0).getDepartureTime() + flightDTO.getInboundLegs().get(0).getArrivalTime());
         return flightDTO;
 
     }
