@@ -20,9 +20,9 @@ import java.util.List;
 @Service
 public class FlightService {
 
-    private static String key = "BeHFw1dD9sSXycPHOAYMnuiVHHblGthN";
+    private static String key ;
 
-    private static String secret = "rM7AYrCBENROJtl2";
+    private static String secret ;
     static Amadeus amadeus = Amadeus
 
             .builder(key,secret)
