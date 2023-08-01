@@ -41,7 +41,8 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/flights/**"),
                                 new AntPathRequestMatcher("/airport/**"),
                                 new AntPathRequestMatcher("/register/**"),
-                                new AntPathRequestMatcher("/authenticate/**")
+                                new AntPathRequestMatcher("/authenticate/**"),
+                                new AntPathRequestMatcher("/map/**")
                         )
                         .permitAll()
                         .anyRequest()
@@ -58,8 +59,9 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration corsConfig = new CorsConfiguration();
-        corsConfig.setAllowedOrigins(List.of("http://127.0.0.1:3000"));
         corsConfig.setAllowedMethods(List.of("*"));
+        corsConfig.setAllowedOrigins(List.of("http://127.0.0.1:3000"));
+    //  corsConfig.setAllowedOrigins(List.of("http://localhost:3000"));
         corsConfig.setAllowedHeaders(List.of("*"));
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", corsConfig);
