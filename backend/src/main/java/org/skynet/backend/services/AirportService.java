@@ -45,9 +45,14 @@ public class AirportService {
         return airportLocationToDTO(locations);
     }
 
-    public AirportDTO airportLocationToDTO(Location[] locations) {
-        Location location = locations[0];
-        return new AirportDTO(location.getName(), location.getIataCode());
+    public AirportDTO airportLocationToDTO(Location[] locations) throws IndexOutOfBoundsException{
+        try{
+            Location location = locations[0];
+            return new AirportDTO(location.getName(), location.getIataCode());
+        }
+        catch (IndexOutOfBoundsException e){
+            throw new ResponseStatusException(HttpStatus.valueOf(404),"No nearby airport found");
+        }
     }
 
     public List<AirportDTO> getAirportsMatchingSearch(String search) throws ResponseStatusException {
